@@ -44,18 +44,7 @@
           </select>
         </div>
 
-        <div class="campo">
-          <label for="valor">Valor</label>
-          <input
-            id="valor"
-            type="text"
-            inputmode="decimal"
-            autocomplete="off"
-            placeholder="0,00"
-            required
-          />
-        </div>
-
+        <!-- AGORA A ORDEM: conta, parcela, valor -->
         <div class="campo campo-opcional conta-predefinida-campo" id="campo-conta-predefinida">
           <label for="conta-predefinida-select">Conta predefinida</label>
           <select id="conta-predefinida-select">
@@ -68,6 +57,18 @@
           <select id="parcela-conta-select">
             <option value="">— selecione —</option>
           </select>
+        </div>
+
+        <div class="campo">
+          <label for="valor">Valor</label>
+          <input
+            id="valor"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="0,00"
+            required
+          />
         </div>
 
         <div class="campo">
@@ -92,7 +93,10 @@
 
     <!-- Consulta diária -->
     <section class="card card-consulta-dia">
-      <h2>Consulta diária de movimentações</h2>
+      <div class="card-consulta-header">
+        <h2>Consulta diária de movimentações</h2>
+        <button type="button" class="btn-icon" id="btn-mov-del-mode">−</button>
+      </div>
 
       <div class="campo campo-inline">
         <label for="data-consulta">Data</label>
@@ -110,7 +114,7 @@
         <h2>Contas e parcelas</h2>
         <div class="botoes-contas">
           <button type="button" class="btn-icon" id="btn-conta-add">＋</button>
-          <button type="button" class="btn-icon" id="btn-conta-del-mode">−</button>
+          <button type="button" class="btn-icon" id="btn-conta-edit-mode">✎</button>
         </div>
       </div>
 
@@ -125,11 +129,11 @@
     </section>
   </main>
 
-  <!-- Modal nova conta -->
+  <!-- Modal nova/edição de conta -->
   <div class="modal-backdrop" id="modal-conta">
     <div class="modal">
       <div class="modal-header">
-        <h3>Nova conta mensal</h3>
+        <h3 id="modal-conta-titulo">Nova conta mensal</h3>
         <button type="button" class="btn-close" id="modal-conta-fechar">✕</button>
       </div>
 
@@ -186,14 +190,14 @@
           />
         </div>
 
-        <button type="submit" class="btn-principal full-width">
+        <button type="submit" class="btn-principal full-width" id="btn-salvar-conta">
           Salvar conta
         </button>
       </form>
     </div>
   </div>
 
-  <!-- Modal confirmação exclusão -->
+  <!-- Modal confirmação exclusão de conta -->
   <div class="modal-backdrop" id="modal-confirma-excluir">
     <div class="modal modal-pequeno">
       <p>Tem certeza que deseja excluir esta conta?</p>
@@ -217,7 +221,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // Config do seu projeto (aquela que você me mandou)
     const firebaseConfig = {
       apiKey: "AIzaSyD5NafulfRw0uK2I3MJWqvxMBeGlH8RIXk",
       authDomain: "financas-muzis.firebaseapp.com",
@@ -227,10 +230,7 @@
       appId: "1:1058294749076:web:251a5f50a127a146962181"
     };
 
-    // Inicializa Firebase
     firebase.initializeApp(firebaseConfig);
-
-    // Deixa o Firestore disponível pro app.js
     window.db = firebase.firestore();
   </script>
 
