@@ -1,8 +1,13 @@
 // =========================
-// Utilidades de data e dinheiro
+// Firebase / Firestore
 // =========================
 
-const db = window.db;
+// firebase vem do script do index.html (firebase-app-compat + firestore-compat)
+const db = firebase.firestore();
+
+// =========================
+// Utilidades de data e dinheiro
+// =========================
 
 function hojeISO() {
   const d = new Date();
@@ -50,41 +55,9 @@ function parseMoedaBR(str) {
 // Estado em memória
 // =========================
 
-let transacoes = []; // {id, tipo, valor, descricao, dataISO, contaId, parcelaIndex}
-let contas = [];     // {id, descricao, valorTotal, qtdParcelas, primeiraDataISO}
+let transacoes = []; // {id, tipo, valor, descricao, dataISO, contaId, parcelaIndex, createdAt}
+let contas = [];     // {id, descricao, valorTotal, qtdParcelas, primeiraDataISO, createdAt}
 
-function observarTransacoes() {
-  db.collection("transacoes")
-    .orderBy("dataISO")
-    .orderBy("createdAt")
-    .onSnapshot((snapshot) => {
-      const novas = [];
-      snapshot.forEach((doc) => {
-        novas.push({ id: doc.id, ...doc.data() });
-      });
-      transacoes = novas;
-      atualizarMovimentoHoje();
-      renderizarListaDiaria();
-      renderizarContas(); // se futuramente quisermos amarrar parcelas pagas
-    });
-}
-
-function observarContas() {
-  db.collection("contas")
-    .orderBy("descricao")
-    .onSnapshot((snapshot) => {
-      const novas = [];
-      snapshot.forEach((doc) => {
-        novas.push({ id: doc.id, ...doc.data() });
-      });
-      contas = novas;
-      preencherSelectContas();
-      renderizarContas();
-    });
-}
-
-
-// controle de exclusão de conta
 let modoExclusaoContas = false;
 let contaPendenteExclusaoId = null;
 
@@ -110,13 +83,11 @@ const selectParcelaConta = document.getElementById("parcela-conta-select");
 const inputDataConsulta = document.getElementById("data-consulta");
 const listaDiaria = document.getElementById("lista-diaria");
 
-// Contas
 const btnContaAdd = document.getElementById("btn-conta-add");
 const btnContaDelMode = document.getElementById("btn-conta-del-mode");
 const inputFiltroMesAno = document.getElementById("filtro-mes-ano");
 const listaContas = document.getElementById("lista-contas");
 
-// Modal conta
 const modalConta = document.getElementById("modal-conta");
 const btnModalContaFechar = document.getElementById("modal-conta-fechar");
 const formConta = document.getElementById("form-conta");
@@ -126,13 +97,12 @@ const inputContaQtdParcelas = document.getElementById("conta-qtd-parcelas");
 const inputContaValorParcela = document.getElementById("conta-valor-parcela");
 const inputContaPrimeiraData = document.getElementById("conta-primeira-data");
 
-// Modal exclusão
 const modalConfirmaExclusao = document.getElementById("modal-confirma-excluir");
 const btnCancelarExclusao = document.getElementById("btn-cancelar-exclusao");
 const btnConfirmarExclusao = document.getElementById("btn-confirmar-exclusao");
 
 // =========================
-// Inicialização básica
+// Inicialização
 // =========================
 
 function inicializarDatas() {
@@ -146,7 +116,6 @@ function inicializarDatas() {
   inputContaPrimeiraData.value = hoje;
 }
 
-// Mostrar/ocultar campos de conta predefinida
 function atualizarVisibilidadeContaPredefinida() {
   const tipo = inputTipo.value;
   const mostrar = tipo === "conta";
@@ -154,18 +123,8 @@ function atualizarVisibilidadeContaPredefinida() {
   campoParcelaConta.style.display = mostrar ? "flex" : "none";
 }
 
-inicializarDatas();
-atualizarVisibilidadeContaPredefinida();
-
-// Começa a ouvir o banco
-observarContas();
-observarTransacoes();
-
-
-
-
 // =========================
-// Movimento do dia
+// Movimento do dia e do mês
 // =========================
 
 function atualizarMovimentoHoje() {
@@ -178,11 +137,9 @@ function atualizarMovimentoHoje() {
       return acc - t.valor; // saída ou conta
     }, 0);
 
-  // texto
   spanMovimentoHoje.textContent = formatarValorReal(mov);
-
-  // cores
   spanMovimentoHoje.classList.remove("saldo-positivo", "saldo-negativo", "saldo-zero");
+
   if (mov > 0) {
     spanMovimentoHoje.classList.add("saldo-positivo");
   } else if (mov < 0) {
@@ -191,10 +148,8 @@ function atualizarMovimentoHoje() {
     spanMovimentoHoje.classList.add("saldo-zero");
   }
 
-  // sempre que o dia muda, atualiza o mês também
   atualizarMovimentoMes();
 }
-
 
 function atualizarMovimentoMes() {
   if (!spanMovimentoMes) return;
@@ -204,17 +159,15 @@ function atualizarMovimentoMes() {
 
   const movMes = transacoes.reduce((acc, t) => {
     if (!t.dataISO) return acc;
-
     const [ano, mes] = t.dataISO.split("-").map(n => parseInt(n, 10));
     if (ano !== anoRef || mes !== mesRef) return acc;
 
     if (t.tipo === "entrada") return acc + t.valor;
-    return acc - t.valor; // saída ou conta
+    return acc - t.valor;
   }, 0);
 
   spanMovimentoMes.textContent = formatarValorReal(movMes);
 }
-
 
 // =========================
 // Lançamentos
@@ -283,11 +236,9 @@ formLancamento.addEventListener("submit", async (e) => {
     await db.collection("transacoes").add(transacao);
   } catch (err) {
     console.error("Erro ao salvar transação:", err);
-    alert("Não foi possível salvar o lançamento. Tenta novamente.");
+    alert("Não foi possível salvar o lançamento.");
     return;
   }
-
-  // onSnapshot vai atualizar a UI, então não precisa mexer em transacoes aqui
 
   inputValor.value = "0,00";
   inputDescricao.value = "";
@@ -339,7 +290,7 @@ function renderizarListaDiaria() {
 }
 
 // =========================
-// Contas e parcelas (versão simples)
+// Contas e parcelas
 // =========================
 
 btnContaAdd.addEventListener("click", () => {
@@ -384,15 +335,13 @@ formConta.addEventListener("submit", async (e) => {
     await db.collection("contas").add(conta);
   } catch (err) {
     console.error("Erro ao salvar conta:", err);
-    alert("Não foi possível salvar a conta. Tenta novamente.");
+    alert("Não foi possível salvar a conta.");
     return;
   }
 
   fecharModalConta();
   limparFormularioConta();
-  // onSnapshot vai cuidar de atualizar contas, select, lista etc.
 });
-
 
 btnCancelarExclusao.addEventListener("click", () => {
   contaPendenteExclusaoId = null;
@@ -411,7 +360,6 @@ btnConfirmarExclusao.addEventListener("click", async () => {
   }
   fecharModalExclusao();
 });
-
 
 inputFiltroMesAno.addEventListener("change", () => {
   renderizarContas();
@@ -441,7 +389,10 @@ function fecharModalExclusao() {
   modalConfirmaExclusao.classList.remove("visivel");
 }
 
-// Preenche select de contas predefinidas no lançamento
+// =========================
+// Select de contas e parcelas
+// =========================
+
 function preencherSelectContas() {
   selectContaPredefinida.innerHTML = `<option value="">— selecione —</option>`;
   contas.forEach(conta => {
@@ -464,7 +415,7 @@ function preencherSelectParcelas() {
   const conta = contas.find(c => c.id === contaId);
   if (!conta) return;
 
-  // Versão simples: deixa selecionar qualquer parcela ainda não paga.
+  // (POR ENQUANTO) deixa escolher qualquer parcela
   for (let i = 1; i <= conta.qtdParcelas; i++) {
     const opt = document.createElement("option");
     opt.value = i - 1; // index
@@ -473,7 +424,10 @@ function preencherSelectParcelas() {
   }
 }
 
-// Gera lista de parcelas (sem toda regra de atraso ainda)
+// =========================
+// Parcelas por conta
+// =========================
+
 function obterParcelasDaConta(conta) {
   const parcelas = [];
   const valorParcela = conta.valorTotal / conta.qtdParcelas;
@@ -501,7 +455,7 @@ function obterParcelasDaConta(conta) {
 
 function renderizarContas() {
   listaContas.innerHTML = "";
-  const mesAno = inputFiltroMesAno.value; // "2025-02"
+  const mesAno = inputFiltroMesAno.value;
   if (!mesAno) return;
 
   const [anoFiltro, mesFiltro] = mesAno.split("-").map(v => parseInt(v, 10));
@@ -518,10 +472,6 @@ function renderizarContas() {
 
       const li = document.createElement("li");
       li.className = "item-conta";
-
-      if (modoExclusaoContas) {
-        li.style.transform = "translateX(0)";
-      }
 
       const divMain = document.createElement("div");
       divMain.className = "item-conta-main";
@@ -553,7 +503,6 @@ function renderizarContas() {
 
       const caixinha = document.createElement("div");
       caixinha.className = "status-caixinha";
-      // No futuro: marcar paga/atrasada baseado nas transações
 
       li.appendChild(divMain);
 
@@ -565,9 +514,57 @@ function renderizarContas() {
           abrirModalExclusao(conta.id);
         });
         li.appendChild(btnDel);
+      } else {
+        li.appendChild(caixinha);
       }
 
       listaContas.appendChild(li);
     });
   });
 }
+
+// =========================
+// Firestore listeners
+// =========================
+
+function observarTransacoes() {
+  db.collection("transacoes")
+    .orderBy("dataISO")
+    .onSnapshot((snapshot) => {
+      const novas = [];
+      snapshot.forEach((doc) => {
+        novas.push({ id: doc.id, ...doc.data() });
+      });
+      transacoes = novas;
+      atualizarMovimentoHoje();
+      renderizarListaDiaria();
+      renderizarContas();
+    }, (err) => {
+      console.error("Erro ao ouvir transações:", err);
+    });
+}
+
+function observarContas() {
+  db.collection("contas")
+    .orderBy("descricao")
+    .onSnapshot((snapshot) => {
+      const novas = [];
+      snapshot.forEach((doc) => {
+        novas.push({ id: doc.id, ...doc.data() });
+      });
+      contas = novas;
+      preencherSelectContas();
+      renderizarContas();
+    }, (err) => {
+      console.error("Erro ao ouvir contas:", err);
+    });
+}
+
+// =========================
+// Start
+// =========================
+
+inicializarDatas();
+atualizarVisibilidadeContaPredefinida();
+observarContas();
+observarTransacoes();
