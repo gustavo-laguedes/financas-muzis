@@ -62,7 +62,7 @@ let contaEmEdicaoId = null;
 let modoExclusaoMovimentos = false;
 
 // =========================
-– Elementos da UI
+// Elementos da UI
 // =========================
 
 const spanDataHoje = document.getElementById("data-hoje");
