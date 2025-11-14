@@ -61,6 +61,7 @@ let contaPendenteExclusaoId = null;
 
 const spanDataHoje = document.getElementById("data-hoje");
 const spanMovimentoHoje = document.getElementById("movimento-hoje");
+const spanMovimentoMes = document.getElementById("movimento-mes");
 
 const formLancamento = document.getElementById("form-lancamento");
 const inputTipo = document.getElementById("tipo");
@@ -123,9 +124,11 @@ function atualizarVisibilidadeContaPredefinida() {
 inicializarDatas();
 atualizarVisibilidadeContaPredefinida();
 atualizarMovimentoHoje();
+atualizarMovimentoMes();
 renderizarListaDiaria();
 renderizarContas();
 preencherSelectContas();
+
 
 // =========================
 // Movimento do dia
@@ -139,8 +142,40 @@ function atualizarMovimentoHoje() {
       if (t.tipo === "entrada") return acc + t.valor;
       return acc - t.valor; // saída ou conta
     }, 0);
+
   spanMovimentoHoje.textContent = formatarValorReal(mov);
+
+  // controle de cor conforme o sinal
+  spanMovimentoHoje.classList.remove("saldo-positivo", "saldo-negativo", "saldo-zero");
+  if (mov > 0) {
+    spanMovimentoHoje.classList.add("saldo-positivo");
+  } else if (mov < 0) {
+    spanMovimentoHoje.classList.add("saldo-negativo");
+  } else {
+    spanMovimentoHoje.classList.add("saldo-zero");
+  }
+
+  atualizarMovimentoMes();
 }
+
+function atualizarMovimentoMes() {
+  if (!spanMovimentoMes) return;
+
+  const hoje = hojeISO();
+  const [anoRef, mesRef] = hoje.split("-").map(n => parseInt(n, 10));
+
+  const movMes = transacoes.reduce((acc, t) => {
+    if (!t.dataISO) return acc;
+    const [ano, mes] = t.dataISO.split("-").map(n => parseInt(n, 10));
+    if (ano !== anoRef || mes !== mesRef) return acc;
+
+    if (t.tipo === "entrada") return acc + t.valor;
+    return acc - t.valor; // saída ou conta
+  }, 0);
+
+  spanMovimentoMes.textContent = formatarValorReal(movMes);
+}
+
 
 // =========================
 // Lançamentos
