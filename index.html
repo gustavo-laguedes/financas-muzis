@@ -209,9 +209,44 @@
     </div>
   </div>
 
-  <footer class="rodape">
+    <footer class="rodape">
     <p>Finanças dos Muzis — versão protótipo</p>
   </footer>
+
+  <!-- Firebase (compat para usar com script normal) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+
+  <script>
+   // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyD5NafulfRw0uK2I3MJWqvxMBeGlH8RIXk",
+  authDomain: "financas-muzis.firebaseapp.com",
+  projectId: "financas-muzis",
+  storageBucket: "financas-muzis.firebasestorage.app",
+  messagingSenderId: "1058294749076",
+  appId: "1:1058294749076:web:251a5f50a127a146962181"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+    // Inicializa o Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // Cria uma instância global de Firestore
+    window.db = firebase.firestore();
+  </script>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
 
   <script src="app.js"></script>
 </body>
