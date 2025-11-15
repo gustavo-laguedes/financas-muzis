@@ -345,11 +345,23 @@ function renderizarListaDiaria() {
     const li = document.createElement("li");
     li.className = "item-movimento";
 
-    const divInfo = document.createElement("div");
+        const divInfo = document.createElement("div");
     divInfo.className = "mov-info";
+
+    let titulo;
+    if (t.tipo === "saida" && t.estabelecimento) {
+      titulo = `${t.estabelecimento} / ${t.descricao}`;
+    } else {
+      titulo = t.descricao;
+    }
+
     divInfo.innerHTML = `
-      <span>${t.descricao}</span>
-      <span>${t.tipo === "entrada" ? "Entrada" : (t.tipo === "saida" ? "Saída" : "Conta predefinida")}</span>
+      <span>${titulo}</span>
+      <span>${
+        t.tipo === "entrada"
+          ? "Entrada"
+          : (t.tipo === "saida" ? "Saída" : "Conta predefinida")
+      }</span>
     `;
 
     const spanValor = document.createElement("span");
