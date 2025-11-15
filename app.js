@@ -264,11 +264,12 @@ formLancamento.addEventListener("submit", async (e) => {
 
   const dataISO = inputDataLancamento.value || hojeISO();
 
-  let contaId = null;
+    let contaId = null;
   let parcelaIndex = null;
   let descricao;
+  let estabelecimento = null;
 
-  if (tipo === "conta") {
+   if (tipo === "conta") {
     contaId = selectContaPredefinida.value || null;
     parcelaIndex = selectParcelaConta.value
       ? parseInt(selectParcelaConta.value, 10)
@@ -283,12 +284,16 @@ formLancamento.addEventListener("submit", async (e) => {
     descricao = conta ? conta.descricao : "Conta predefinida";
   } else {
     descricao = inputDescricao.value.trim() || "(sem descrição)";
+    if (tipo === "saida") {
+      estabelecimento = inputEstabelecimento.value.trim() || null;
+    }
   }
 
   const transacao = {
     tipo,
     valor,
     descricao,
+    estabelecimento,
     dataISO,
     contaId,
     parcelaIndex,
@@ -303,8 +308,9 @@ formLancamento.addEventListener("submit", async (e) => {
     return;
   }
 
-  inputValor.value = "0,00";
+    inputValor.value = "0,00";
   inputDescricao.value = "";
+  inputEstabelecimento.value = "";
 });
 
 // =========================
