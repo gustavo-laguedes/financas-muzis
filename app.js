@@ -81,7 +81,16 @@ const selectContaPredefinida = document.getElementById("conta-predefinida-select
 const selectParcelaConta = document.getElementById("parcela-conta-select");
 
 const campoDescricao = document.getElementById("campo-descricao");
+const inputValor = document.getElementById("valor");
+const inputDescricao = document.getElementById("descricao");
+const inputDataLancamento = document.getElementById("data-lancamento");
 
+const campoContaPredefinida = document.getElementById("campo-conta-predefinida");
+const campoParcelaConta = document.getElementById("campo-parcela-conta");
+...
+const campoDescricao = document.getElementById("campo-descricao");
+const campoEstabelecimento = document.getElementById("campo-estabelecimento");
+const inputEstabelecimento = document.getElementById("estabelecimento");
 const inputDataConsulta = document.getElementById("data-consulta");
 const listaDiaria = document.getElementById("lista-diaria");
 const btnMovDelMode = document.getElementById("btn-mov-del-mode");
