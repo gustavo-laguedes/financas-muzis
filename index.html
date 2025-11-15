@@ -4,12 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Finanças dos Muzis</title>
+
+  <!-- PWA / iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Finanças dos Muzis">
-<meta name="theme-color" content="#f5ede2">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/muzis-1024.PNG?v=5">
-<link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Finanças dos Muzis">
+  <meta name="theme-color" content="#f5ede2">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/muzis-1024.PNG?v=5">
+  <link rel="manifest" href="manifest.webmanifest">
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -78,22 +81,22 @@
           />
         </div>
 
-        <div class="campo" id="campo-estabelecimento">
-  <label for="estabelecimento">Estabelecimento</label>
-  <input
-    id="estabelecimento"
-    type="text"
-    placeholder="Ex: Mercado X, Padaria Y..."
-  />
-</div>
-
+        <!-- NOVO: Estabelecimento (só aparece em Saída) -->
+        <div class="campo" id="campo-estabelecimento" style="display:none">
+          <label for="estabelecimento">Estabelecimento</label>
+          <input
+            id="estabelecimento"
+            type="text"
+            placeholder="Ex: Mercado X, Padaria Y..."
+          />
+        </div>
 
         <div class="campo" id="campo-descricao">
           <label for="descricao">Descrição</label>
           <input
             id="descricao"
             type="text"
-            placeholder="Ex: mercado, salário, cartão..."
+            placeholder="Ex: compras do mês, salário, cartão..."
           />
         </div>
 
