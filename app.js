@@ -763,18 +763,36 @@ async function gerarRelatorio() {
 
   const doc = new jsPDF();
 
-  const titulo = mesSel
-    ? `Relatório ${mesesNomes[mesSel-1]}/${ano}`
-    : `Relatório ${ano}`;
+  const tituloPeriodo = mesSel
+    ? `${mesesNomes[mesSel-1]} / ${ano}`
+    : `${ano}`;
 
+  // Cores
+  const corTitulo = [60, 60, 60];
+  const corSub = [120, 120, 120];
+  const corLinha = [220, 220, 220];
+  const corTexto = [40, 40, 40];
+  const corPositivo = [0, 140, 0];
+  const corNegativo = [200, 0, 0];
+
+  // Cabeçalho
   doc.setFontSize(16);
-  doc.text(titulo, 105, 15, { align: "center" });
+  doc.setTextColor(...corTitulo);
+  doc.text("Relatório de Finanças dos Muzis", 105, 15, { align: "center" });
 
-  doc.setFontSize(10);
+  doc.setFontSize(12);
+  doc.setTextColor(...corSub);
+  doc.text(tituloPeriodo, 105, 22, { align: "center" });
+
+  doc.setFontSize(9);
   const dataGeracao = formatarDataBonita(hojeISO());
-  doc.text(`Gerado em ${dataGeracao}`, 105, 22, { align: "center" });
+  doc.text(`Gerado em ${dataGeracao}`, 105, 28, { align: "center" });
 
-  let y = 30;
+  // Linha horizontal
+  doc.setDrawColor(...corLinha);
+  doc.line(10, 32, 200, 32);
+
+  let y = 38;
   let totalGeral = 0;
 
   function quebraLinha(inc) {
@@ -789,10 +807,14 @@ async function gerarRelatorio() {
     const lista = porData[dataISO];
     let totalDia = 0;
 
+    // Data
     doc.setFontSize(11);
+    doc.setTextColor(...corTitulo);
     doc.text(formatarDataBonita(dataISO), 10, y);
     quebraLinha(5);
-    doc.setFontSize(10);
+
+    doc.setFontSize(9);
+    doc.setTextColor(...corTexto);
 
     lista.forEach(t => {
       const sinal = t.tipo === "entrada" ? "+" : "-";
@@ -806,36 +828,83 @@ async function gerarRelatorio() {
         nome = t.descricao;
       }
 
-      const valorStr = sinal + formatarValorReal(t.valor);
+      const valorStr = formatarValorReal(t.valor);
+      const xValor = 200 - 10;
 
+      // descrição
+      doc.setTextColor(...corTexto);
       doc.text(nome, 12, y);
-      doc.text(valorStr, 200 - 10, y, { align: "right" });
+
+      // valor colorido
+      if (fator === 1) {
+        doc.setTextColor(...corPositivo);
+        doc.text("+" + valorStr, xValor, y, { align: "right" });
+      } else {
+        doc.setTextColor(...corNegativo);
+        doc.text("-" + valorStr, xValor, y, { align: "right" });
+      }
+
       quebraLinha(5);
     });
 
-    const totalDiaStr = (totalDia >= 0 ? "+" : "") + formatarValorReal(Math.abs(totalDia));
-    doc.setFontSize(10);
+    // total do dia
+    const totalDiaAbs = Math.abs(totalDia);
+    const totalDiaStr = formatarValorReal(totalDiaAbs);
+    const xValorDia = 200 - 10;
+
+    doc.setTextColor(...corTexto);
     doc.text("Total do dia:", 12, y);
-    doc.text(totalDiaStr, 200 - 10, y, { align: "right" });
+
+    if (totalDia >= 0) {
+      doc.setTextColor(...corPositivo);
+      doc.text("+" + totalDiaStr, xValorDia, y, { align: "right" });
+    } else {
+      doc.setTextColor(...corNegativo);
+      doc.text("-" + totalDiaStr, xValorDia, y, { align: "right" });
+    }
 
     totalGeral += totalDia;
-    quebraLinha(8);
+    quebraLinha(6);
+
+    // linha separadora
+    doc.setDrawColor(...corLinha);
+    doc.line(10, y, 200, y);
+    quebraLinha(4);
   });
 
-  const totalGeralStr = (totalGeral >= 0 ? "+" : "") + formatarValorReal(Math.abs(totalGeral));
-  doc.setFontSize(12);
+  // Total geral
+  const totalGeralAbs = Math.abs(totalGeral);
+  const totalGeralStr = formatarValorReal(totalGeralAbs);
+
   if (y > 260) {
     doc.addPage();
     y = 20;
   }
+
+  doc.setFontSize(12);
+  doc.setTextColor(...corTitulo);
   doc.text("Total geral:", 12, y);
-  doc.text(totalGeralStr, 200 - 10, y, { align: "right" });
+
+  const xValorGeral = 200 - 10;
+  if (totalGeral >= 0) {
+    doc.setTextColor(...corPositivo);
+    doc.text("+" + totalGeralStr, xValorGeral, y, { align: "right" });
+  } else {
+    doc.setTextColor(...corNegativo);
+    doc.text("-" + totalGeralStr, xValorGeral, y, { align: "right" });
+  }
 
   const nomeArquivo = mesSel
     ? `relatorio-muzis-${String(mesSel).padStart(2,"0")}-${ano}.pdf`
     : `relatorio-muzis-${ano}.pdf`;
 
-  doc.save(nomeArquivo);
+  try {
+    const blobUrl = doc.output("bloburl");
+    window.open(blobUrl, "_blank");
+  } catch (e) {
+    doc.save(nomeArquivo);
+  }
+
   fecharModalRelatorio();
 }
 
