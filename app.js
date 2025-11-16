@@ -4,6 +4,9 @@
 
 const db = firebase.firestore();
 
+// jsPDF (via CDN)
+const { jsPDF } = window.jspdf || {};
+
 // =========================
 // Utilidades de data e dinheiro
 // =========================
@@ -107,6 +110,14 @@ const btnSalvarConta = document.getElementById("btn-salvar-conta");
 const modalConfirmaExclusao = document.getElementById("modal-confirma-excluir");
 const btnCancelarExclusao = document.getElementById("btn-cancelar-exclusao");
 const btnConfirmarExclusao = document.getElementById("btn-confirmar-exclusao");
+
+// Relatório
+const btnRelatorio = document.getElementById("btn-relatorio");
+const modalRelatorio = document.getElementById("modal-relatorio");
+const btnModalRelatorioFechar = document.getElementById("modal-relatorio-fechar");
+const inputRelAno = document.getElementById("rel-ano");
+const selectRelMes = document.getElementById("rel-mes");
+const btnGerarRelatorio = document.getElementById("btn-gerar-relatorio");
 
 // =========================
 // Inicialização
@@ -691,6 +702,144 @@ function renderizarContas() {
 }
 
 // =========================
+// Relatório em PDF
+// =========================
+
+function abrirModalRelatorio() {
+  const hoje = hojeISO();
+  const anoAtual = parseInt(hoje.split("-")[0], 10);
+  inputRelAno.value = anoAtual;
+  selectRelMes.value = "";
+  modalRelatorio.classList.add("visivel");
+}
+
+function fecharModalRelatorio() {
+  modalRelatorio.classList.remove("visivel");
+}
+
+async function gerarRelatorio() {
+  if (!jsPDF) {
+    alert("Biblioteca de PDF não carregada.");
+    return;
+  }
+  if (!transacoes.length) {
+    alert("Não há movimentações para gerar relatório.");
+    return;
+  }
+
+  const ano = parseInt(inputRelAno.value, 10);
+  if (!ano) {
+    alert("Informe um ano válido.");
+    return;
+  }
+
+  const mesSel = selectRelMes.value ? parseInt(selectRelMes.value, 10) : null;
+
+  const filtradas = transacoes.filter(t => {
+    if (!t.dataISO) return false;
+    const [a, m] = t.dataISO.split("-").map(Number);
+    if (a !== ano) return false;
+    if (mesSel && m !== mesSel) return false;
+    return true;
+  });
+
+  if (!filtradas.length) {
+    alert("Não há movimentações nesse período.");
+    return;
+  }
+
+  const porData = {};
+  filtradas.forEach(t => {
+    if (!porData[t.dataISO]) porData[t.dataISO] = [];
+    porData[t.dataISO].push(t);
+  });
+
+  const datasOrdenadas = Object.keys(porData).sort();
+
+  const mesesNomes = [
+    "janeiro","fevereiro","março","abril","maio","junho",
+    "julho","agosto","setembro","outubro","novembro","dezembro"
+  ];
+
+  const doc = new jsPDF();
+
+  const titulo = mesSel
+    ? `Relatório ${mesesNomes[mesSel-1]}/${ano}`
+    : `Relatório ${ano}`;
+
+  doc.setFontSize(16);
+  doc.text(titulo, 105, 15, { align: "center" });
+
+  doc.setFontSize(10);
+  const dataGeracao = formatarDataBonita(hojeISO());
+  doc.text(`Gerado em ${dataGeracao}`, 105, 22, { align: "center" });
+
+  let y = 30;
+  let totalGeral = 0;
+
+  function quebraLinha(inc) {
+    y += inc;
+    if (y > 280) {
+      doc.addPage();
+      y = 20;
+    }
+  }
+
+  datasOrdenadas.forEach(dataISO => {
+    const lista = porData[dataISO];
+    let totalDia = 0;
+
+    doc.setFontSize(11);
+    doc.text(formatarDataBonita(dataISO), 10, y);
+    quebraLinha(5);
+    doc.setFontSize(10);
+
+    lista.forEach(t => {
+      const sinal = t.tipo === "entrada" ? "+" : "-";
+      const fator = t.tipo === "entrada" ? 1 : -1;
+      totalDia += fator * t.valor;
+
+      let nome;
+      if (t.tipo === "saida" && t.estabelecimento) {
+        nome = `${t.estabelecimento} / ${t.descricao}`;
+      } else {
+        nome = t.descricao;
+      }
+
+      const valorStr = sinal + formatarValorReal(t.valor);
+
+      doc.text(nome, 12, y);
+      doc.text(valorStr, 200 - 10, y, { align: "right" });
+      quebraLinha(5);
+    });
+
+    const totalDiaStr = (totalDia >= 0 ? "+" : "") + formatarValorReal(Math.abs(totalDia));
+    doc.setFontSize(10);
+    doc.text("Total do dia:", 12, y);
+    doc.text(totalDiaStr, 200 - 10, y, { align: "right" });
+
+    totalGeral += totalDia;
+    quebraLinha(8);
+  });
+
+  const totalGeralStr = (totalGeral >= 0 ? "+" : "") + formatarValorReal(Math.abs(totalGeral));
+  doc.setFontSize(12);
+  if (y > 260) {
+    doc.addPage();
+    y = 20;
+  }
+  doc.text("Total geral:", 12, y);
+  doc.text(totalGeralStr, 200 - 10, y, { align: "right" });
+
+  const nomeArquivo = mesSel
+    ? `relatorio-muzis-${String(mesSel).padStart(2,"0")}-${ano}.pdf`
+    : `relatorio-muzis-${ano}.pdf`;
+
+  doc.save(nomeArquivo);
+  fecharModalRelatorio();
+}
+
+// =========================
 // Firestore listeners
 // =========================
 
@@ -726,6 +875,14 @@ function observarContas() {
       console.error("Erro ao ouvir contas:", err);
     });
 }
+
+// =========================
+// Eventos de relatório
+// =========================
+
+btnRelatorio.addEventListener("click", abrirModalRelatorio);
+btnModalRelatorioFechar.addEventListener("click", fecharModalRelatorio);
+btnGerarRelatorio.addEventListener("click", gerarRelatorio);
 
 // =========================
 // Start
