@@ -81,7 +81,7 @@
           />
         </div>
 
-        <!-- NOVO: Estabelecimento (só aparece em Saída) -->
+        <!-- Estabelecimento: só em Saída -->
         <div class="campo" id="campo-estabelecimento" style="display:none">
           <label for="estabelecimento">Estabelecimento</label>
           <input
@@ -146,6 +146,18 @@
       <ul id="lista-contas" class="lista-contas">
         <!-- preenchido via JS -->
       </ul>
+
+      <!-- Botão Gerar Relatório -->
+      <div style="margin-top: 1rem; display:flex; justify-content:center;">
+        <button
+          type="button"
+          class="btn-principal"
+          id="btn-relatorio"
+          style="max-width:260px; width:100%;"
+        >
+          Gerar relatório
+        </button>
+      </div>
     </section>
   </main>
 
@@ -232,13 +244,54 @@
     </div>
   </div>
 
+  <!-- Modal Relatório -->
+  <div class="modal-backdrop" id="modal-relatorio">
+    <div class="modal modal-pequeno">
+      <div class="modal-header">
+        <h3>Gerar relatório</h3>
+        <button type="button" class="btn-close" id="modal-relatorio-fechar">✕</button>
+      </div>
+
+      <div class="campo">
+        <label for="rel-ano">Ano</label>
+        <input id="rel-ano" type="number" min="2000" max="2100" />
+      </div>
+
+      <div class="campo">
+        <label for="rel-mes">Mês (opcional)</label>
+        <select id="rel-mes">
+          <option value="">Ano inteiro</option>
+          <option value="1">Janeiro</option>
+          <option value="2">Fevereiro</option>
+          <option value="3">Março</option>
+          <option value="4">Abril</option>
+          <option value="5">Maio</option>
+          <option value="6">Junho</option>
+          <option value="7">Julho</option>
+          <option value="8">Agosto</option>
+          <option value="9">Setembro</option>
+          <option value="10">Outubro</option>
+          <option value="11">Novembro</option>
+          <option value="12">Dezembro</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn-principal full-width" id="btn-gerar-relatorio">
+        Gerar relatório
+      </button>
+    </div>
+  </div>
+
   <footer class="rodape">
-    <p>Finanças dos Muzis — versão protótipo</p>
+    <p>Finanças dos Muzis — 151125v0</p>
   </footer>
 
   <!-- Firebase via CDN (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+
+  <!-- jsPDF para gerar PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script>
     const firebaseConfig = {
