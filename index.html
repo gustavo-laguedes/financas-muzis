@@ -83,12 +83,11 @@
 
         <!-- Estabelecimento: só em Saída -->
         <div class="campo" id="campo-estabelecimento" style="display:none">
-          <label for="estabelecimento">Estabelecimento</label>
-          <input
-            id="estabelecimento"
-            type="text"
-            placeholder="Ex: Mercado X, Padaria Y..."
-          />
+          <label for="estabelecimento-select">Estabelecimento</label>
+          <select id="estabelecimento-select">
+            <option value="">— selecione —</option>
+            <option value="__novo__">+ Cadastrar estabelecimento...</option>
+          </select>
         </div>
 
         <div class="campo" id="campo-descricao">
@@ -148,7 +147,7 @@
       </ul>
     </section>
 
-    <!-- Botão Gerar Relatório (card separado) -->
+    <!-- Botão Gerar Relatório -->
     <section class="card card-relatorio">
       <div style="display:flex; justify-content:center;">
         <button
@@ -164,7 +163,7 @@
   </main>
 
   <footer class="rodape">
-    <p>Finanças dos Muzis — 151125v1</p>
+    <p>Finanças dos Muzis — 151125v0</p>
   </footer>
 
   <!-- Modal nova/edição de conta -->
@@ -285,6 +284,38 @@
       <button type="button" class="btn-principal full-width" id="btn-gerar-relatorio">
         Gerar relatório
       </button>
+    </div>
+  </div>
+
+  <!-- Modal Estabelecimentos -->
+  <div class="modal-backdrop" id="modal-estabelecimento">
+    <div class="modal modal-pequeno">
+      <div class="modal-header">
+        <h3>Estabelecimentos</h3>
+        <button type="button" class="btn-close" id="modal-estabelecimento-fechar">✕</button>
+      </div>
+
+      <form id="form-estabelecimento" class="form-conta">
+        <div class="campo">
+          <label for="est-nome">Novo estabelecimento</label>
+          <input
+            id="est-nome"
+            type="text"
+            placeholder="Ex: Mercado X, Farmácia Y..."
+            required
+          />
+        </div>
+        <button type="submit" class="btn-principal full-width">
+          Salvar
+        </button>
+      </form>
+
+      <div class="campo" style="margin-top:1rem;">
+        <label>Estabelecimentos cadastrados</label>
+        <ul id="lista-estabelecimentos" class="lista-movimentos">
+          <!-- preenchido via JS -->
+        </ul>
+      </div>
     </div>
   </div>
 
