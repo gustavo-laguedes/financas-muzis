@@ -911,7 +911,12 @@ async function gerarRelatorio() {
   doc.line(10, 32, 200, 32);
 
   let y = 38;
+
+  // Totais que vamos acumular
   let totalGeral = 0;
+  let totalEntradas = 0;
+  let totalSaidas = 0;
+  const mapaSaidasEstab = {}; // { nome: valor }
 
   function quebraLinha(inc) {
     y += inc;
@@ -921,6 +926,7 @@ async function gerarRelatorio() {
     }
   }
 
+  // Corpo: por dia
   datasOrdenadas.forEach(dataISO => {
     const lista = porData[dataISO];
     let totalDia = 0;
@@ -935,9 +941,24 @@ async function gerarRelatorio() {
     doc.setTextColor(...corTexto);
 
     lista.forEach(t => {
-      const sinal = t.tipo === "entrada" ? "+" : "-";
       const fator = t.tipo === "entrada" ? 1 : -1;
       totalDia += fator * t.valor;
+
+      // acumula totas gerais
+      if (t.tipo === "entrada") {
+        totalEntradas += t.valor;
+      } else {
+        totalSaidas += t.valor;
+
+        // agrupar saídas por estabelecimento
+        if (t.tipo === "saida") {
+          const nomeEst = t.estabelecimento || "Outros";
+          mapaSaidasEstab[nomeEst] = (mapaSaidasEstab[nomeEst] || 0) + t.valor;
+        } else if (t.tipo === "conta") {
+          const nomeEst = "Contas predefinidas";
+          mapaSaidasEstab[nomeEst] = (mapaSaidasEstab[nomeEst] || 0) + t.valor;
+        }
+      }
 
       let nome;
       if (t.tipo === "saida" && t.estabelecimento) {
@@ -990,7 +1011,7 @@ async function gerarRelatorio() {
     quebraLinha(4);
   });
 
-  // Total geral
+  // Total geral (saldo)
   const totalGeralAbs = Math.abs(totalGeral);
   const totalGeralStr = formatarValorReal(totalGeralAbs);
 
@@ -1001,7 +1022,7 @@ async function gerarRelatorio() {
 
   doc.setFontSize(12);
   doc.setTextColor(...corTitulo);
-  doc.text("Total geral:", 12, y);
+  doc.text("Total geral (saldo):", 12, y);
 
   const xValorGeral = 200 - 10;
   if (totalGeral >= 0) {
@@ -1010,6 +1031,91 @@ async function gerarRelatorio() {
   } else {
     doc.setTextColor(...corNegativo);
     doc.text("-" + totalGeralStr, xValorGeral, y, { align: "right" });
+  }
+
+  // =========================
+  // Resumo final
+  // =========================
+  quebraLinha(10);
+
+  // Totais de entrada/saída
+  doc.setFontSize(11);
+  doc.setTextColor(...corTitulo);
+  doc.text("Resumo do período", 12, y);
+  quebraLinha(6);
+
+  doc.setFontSize(9);
+  doc.setTextColor(...corTexto);
+  doc.text("Total de entradas:", 12, y);
+  doc.setTextColor(...corPositivo);
+  doc.text(
+    formatarValorReal(totalEntradas),
+    200 - 10,
+    y,
+    { align: "right" }
+  );
+  quebraLinha(5);
+
+  doc.setTextColor(...corTexto);
+  doc.text("Total de saídas:", 12, y);
+  doc.setTextColor(...corNegativo);
+  doc.text(
+    "-" + formatarValorReal(totalSaidas),
+    200 - 10,
+    y,
+    { align: "right" }
+  );
+  quebraLinha(8);
+
+  // Saídas por estabelecimento
+  const estabNomes = Object.keys(mapaSaidasEstab);
+  if (estabNomes.length) {
+    if (y > 260) {
+      doc.addPage();
+      y = 20;
+    }
+
+    doc.setFontSize(10);
+    doc.setTextColor(...corTitulo);
+    doc.text("Saídas por estabelecimento", 12, y);
+    quebraLinha(6);
+
+    doc.setFontSize(9);
+    doc.setTextColor(...corTexto);
+
+    estabNomes.forEach(nome => {
+      if (y > 280) {
+        doc.addPage();
+        y = 20;
+        doc.setFontSize(9);
+        doc.setTextColor(...corTexto);
+      }
+
+      const valor = mapaSaidasEstab[nome];
+      const valorStr = formatarValorReal(valor);
+
+      doc.text(nome, 14, y);
+      doc.setTextColor(...corNegativo);
+      doc.text("-" + valorStr, 200 - 10, y, { align: "right" });
+      doc.setTextColor(...corTexto);
+      quebraLinha(5);
+    });
+
+    // Linha e total geral de saídas
+    doc.setDrawColor(...corLinha);
+    doc.line(10, y, 200, y);
+    quebraLinha(4);
+
+    doc.setFontSize(10);
+    doc.setTextColor(...corTitulo);
+    doc.text("Total geral de saídas:", 12, y);
+    doc.setTextColor(...corNegativo);
+    doc.text(
+      "-" + formatarValorReal(totalSaidas),
+      200 - 10,
+      y,
+      { align: "right" }
+    );
   }
 
   const nomeArquivo = mesSel
@@ -1025,6 +1131,7 @@ async function gerarRelatorio() {
 
   fecharModalRelatorio();
 }
+
 
 // =========================
 // Firestore listeners
