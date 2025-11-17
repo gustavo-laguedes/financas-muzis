@@ -57,6 +57,7 @@ function parseMoedaBR(str) {
 
 let transacoes = [];
 let contas = [];
+let estabelecimentos = [];
 
 let modoEdicaoContas = false;
 let contaPendenteExclusaoId = null;
@@ -85,7 +86,7 @@ const selectParcelaConta = document.getElementById("parcela-conta-select");
 
 const campoDescricao = document.getElementById("campo-descricao");
 const campoEstabelecimento = document.getElementById("campo-estabelecimento");
-const inputEstabelecimento = document.getElementById("estabelecimento");
+const selectEstabelecimento = document.getElementById("estabelecimento-select");
 
 const inputDataConsulta = document.getElementById("data-consulta");
 const listaDiaria = document.getElementById("lista-diaria");
@@ -118,6 +119,13 @@ const btnModalRelatorioFechar = document.getElementById("modal-relatorio-fechar"
 const inputRelAno = document.getElementById("rel-ano");
 const selectRelMes = document.getElementById("rel-mes");
 const btnGerarRelatorio = document.getElementById("btn-gerar-relatorio");
+
+// Estabelecimentos
+const modalEstabelecimento = document.getElementById("modal-estabelecimento");
+const btnModalEstabelecimentoFechar = document.getElementById("modal-estabelecimento-fechar");
+const formEstabelecimento = document.getElementById("form-estabelecimento");
+const inputEstNome = document.getElementById("est-nome");
+const listaEstabelecimentos = document.getElementById("lista-estabelecimentos");
 
 // =========================
 // Inicialização
@@ -156,7 +164,7 @@ function atualizarVisibilidadeContaPredefinida() {
   if (campoEstabelecimento) {
     campoEstabelecimento.style.display = isSaida ? "flex" : "none";
     if (!isSaida) {
-      inputEstabelecimento.value = "";
+      selectEstabelecimento.value = "";
     }
   }
 
@@ -289,7 +297,12 @@ formLancamento.addEventListener("submit", async (e) => {
   } else {
     descricao = inputDescricao.value.trim() || "(sem descrição)";
     if (tipo === "saida") {
-      estabelecimento = inputEstabelecimento.value.trim() || null;
+      const estValue = selectEstabelecimento.value;
+      if (!estValue || estValue === "__novo__") {
+        alert("Selecione um estabelecimento.");
+        return;
+      }
+      estabelecimento = estValue;
     }
   }
 
@@ -314,7 +327,7 @@ formLancamento.addEventListener("submit", async (e) => {
 
   inputValor.value = "0,00";
   inputDescricao.value = "";
-  inputEstabelecimento.value = "";
+  if (selectEstabelecimento) selectEstabelecimento.value = "";
 });
 
 // =========================
@@ -702,6 +715,111 @@ function renderizarContas() {
 }
 
 // =========================
+// Estabelecimentos
+// =========================
+
+function preencherSelectEstabelecimentos() {
+  if (!selectEstabelecimento) return;
+  selectEstabelecimento.innerHTML = `<option value="">— selecione —</option>`;
+
+  estabelecimentos.forEach(est => {
+    const opt = document.createElement("option");
+    opt.value = est.nome;
+    opt.textContent = est.nome;
+    selectEstabelecimento.appendChild(opt);
+  });
+
+  // opção especial para cadastrar
+  const optNovo = document.createElement("option");
+  optNovo.value = "__novo__";
+  optNovo.textContent = "+ Cadastrar estabelecimento...";
+  selectEstabelecimento.appendChild(optNovo);
+}
+
+function renderizarListaEstabelecimentos() {
+  if (!listaEstabelecimentos) return;
+  listaEstabelecimentos.innerHTML = "";
+
+  if (!estabelecimentos.length) {
+    const li = document.createElement("li");
+    li.textContent = "Nenhum estabelecimento cadastrado.";
+    li.style.fontSize = "0.8rem";
+    li.style.color = "#85888d";
+    listaEstabelecimentos.appendChild(li);
+    return;
+  }
+
+  estabelecimentos.forEach(est => {
+    const li = document.createElement("li");
+    li.className = "item-movimento";
+
+    const spanNome = document.createElement("span");
+    spanNome.textContent = est.nome;
+
+    const btnDel = document.createElement("button");
+    btnDel.className = "btn-icon";
+    btnDel.textContent = "−";
+    btnDel.addEventListener("click", async () => {
+      const ok = confirm(`Excluir estabelecimento "${est.nome}"?`);
+      if (!ok) return;
+      try {
+        await db.collection("estabelecimentos").doc(est.id).delete();
+      } catch (err) {
+        console.error("Erro ao excluir estabelecimento:", err);
+        alert("Não foi possível excluir este estabelecimento.");
+      }
+    });
+
+    li.appendChild(spanNome);
+    li.appendChild(btnDel);
+    listaEstabelecimentos.appendChild(li);
+  });
+}
+
+selectEstabelecimento.addEventListener("change", () => {
+  if (selectEstabelecimento.value === "__novo__") {
+    // abre modal de cadastro e reseta select
+    selectEstabelecimento.value = "";
+    abrirModalEstabelecimento();
+  }
+});
+
+function abrirModalEstabelecimento() {
+  inputEstNome.value = "";
+  modalEstabelecimento.classList.add("visivel");
+}
+
+function fecharModalEstabelecimento() {
+  modalEstabelecimento.classList.remove("visivel");
+}
+
+btnModalEstabelecimentoFechar.addEventListener("click", fecharModalEstabelecimento);
+
+formEstabelecimento.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const nome = inputEstNome.value.trim();
+  if (!nome) return;
+
+  if (estabelecimentos.some(e => e.nome.toLowerCase() === nome.toLowerCase())) {
+    alert("Já existe um estabelecimento com esse nome.");
+    return;
+  }
+
+  try {
+    await db.collection("estabelecimentos").add({
+      nome,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (err) {
+    console.error("Erro ao salvar estabelecimento:", err);
+    alert("Não foi possível salvar este estabelecimento.");
+    return;
+  }
+
+  inputEstNome.value = "";
+});
+
+// =========================
 // Relatório em PDF
 // =========================
 
@@ -945,6 +1063,22 @@ function observarContas() {
     });
 }
 
+function observarEstabelecimentos() {
+  db.collection("estabelecimentos")
+    .orderBy("nome")
+    .onSnapshot((snapshot) => {
+      const novas = [];
+      snapshot.forEach((doc) => {
+        novas.push({ id: doc.id, ...doc.data() });
+      });
+      estabelecimentos = novas;
+      preencherSelectEstabelecimentos();
+      renderizarListaEstabelecimentos();
+    }, (err) => {
+      console.error("Erro ao ouvir estabelecimentos:", err);
+    });
+}
+
 // =========================
 // Eventos de relatório
 // =========================
@@ -961,3 +1095,4 @@ inicializarDatas();
 atualizarVisibilidadeContaPredefinida();
 observarContas();
 observarTransacoes();
+observarEstabelecimentos();
