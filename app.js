@@ -65,6 +65,24 @@ let contaEmEdicaoId = null;
 
 let modoExclusaoMovimentos = false;
 
+// controle do splash de carregamento
+let carregouTransacoes = false;
+let carregouContas = false;
+let carregouEstabelecimentos = false;
+let splashRemovido = false;
+
+function tentarEsconderSplash() {
+  if (splashRemovido) return;
+  if (carregouTransacoes && carregouContas && carregouEstabelecimentos) {
+    const splash = document.getElementById("splash-loading");
+    if (splash) {
+      splash.classList.add("splash-fade-out");
+      setTimeout(() => splash.remove(), 300);
+    }
+    splashRemovido = true;
+  }
+}
+
 // =========================
 // Elementos da UI
 // =========================
@@ -1157,10 +1175,14 @@ function observarTransacoes() {
       atualizarMovimentoHoje();
       renderizarListaDiaria();
       renderizarContas();
+
+      carregouTransacoes = true;
+      tentarEsconderSplash();
     }, (err) => {
       console.error("Erro ao ouvir transações:", err);
     });
 }
+
 
 function observarContas() {
   db.collection("contas")
@@ -1173,10 +1195,14 @@ function observarContas() {
       contas = novas;
       preencherSelectContas();
       renderizarContas();
+
+      carregouContas = true;
+      tentarEsconderSplash();
     }, (err) => {
       console.error("Erro ao ouvir contas:", err);
     });
 }
+
 
 function observarEstabelecimentos() {
   db.collection("estabelecimentos")
@@ -1189,6 +1215,9 @@ function observarEstabelecimentos() {
       estabelecimentos = novas;
       preencherSelectEstabelecimentos();
       renderizarListaEstabelecimentos();
+
+      carregouEstabelecimentos = true;
+      tentarEsconderSplash();
     }, (err) => {
       console.error("Erro ao ouvir estabelecimentos:", err);
     });
