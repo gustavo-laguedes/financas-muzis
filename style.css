@@ -456,7 +456,7 @@ body {
 }
 
 .topbar {
-  text-align: center;
+  text-align: left;
   padding: 1.5rem 0;
 }
 
@@ -476,7 +476,7 @@ body {
 
 
 .subtitle {
-  margin-top: 0.5rem;
+  margin-top: 1.0rem;
   font-size: 0.9rem;
   color: #85888d;
 }
