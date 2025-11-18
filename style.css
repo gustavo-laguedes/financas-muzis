@@ -453,3 +453,25 @@ body {
   color: #8a8e93;
   padding: 12px;
 }
+
+.topbar {
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.topbar-logo-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flux-logo {
+  width: 120px;      /* ajuste como quiser */
+  height: auto;
+}
+
+.subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #85888d;
+}
