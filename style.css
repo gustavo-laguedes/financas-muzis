@@ -9,7 +9,6 @@
   position: fixed;
   inset: 0;
   display: flex;
-  background: #ffffff;           /* tela toda branca */
   flex-direction: column;
   align-items: center;
   justify-content: center;
